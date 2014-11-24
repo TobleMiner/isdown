@@ -1,0 +1,60 @@
+#!/usr/bin/python
+
+import urllib.request
+import json
+import sys
+import re
+
+if(len(sys.argv) < 2):
+	print("No service specified")
+	sys.exit(1)
+
+url = 'https://downdetector.com/status/' + sys.argv[1]
+
+headers = {"User-Agent": "Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"}
+
+request = urllib.request.Request(url, headers = headers)
+response = urllib.request.urlopen(request)
+data = response.read()
+html = data.decode('utf-8')
+
+match = re.search("\{\s*\n\s*element: 'holder'.*\]\,", html, re.DOTALL)
+filtered = match.group()
+lines = filtered.split("\n")
+data = {}
+
+average = 0
+datapoints = 0
+report_max = 0
+for i in range(0, len(lines)):
+	line = lines[i].strip().rstrip(",")
+	if(line.startswith("{") and line.endswith("}")):
+		line = re.sub(r"{\s+(\w)", r'{"\1', line)
+		line = re.sub(r",\s+(\w)", r',"\1', line)
+		line = re.sub(r"(\w):\s", r'\1":', line)
+		line = re.sub(r"'", r'"', line)
+		entry = json.JSONDecoder().decode(line)
+		average += entry['value']
+		data[datapoints] = entry
+		datapoints += 1
+		report_max = max(report_max, entry['value'])
+
+average /= datapoints
+
+average_last = 0
+
+max_len = str(len(str(report_max)) + 3)
+
+for i in range(datapoints - 12, datapoints):
+	average_last += data[i]["value"] / 12
+
+print(('Max     24h: {:' + max_len + '.2f}').format(report_max))
+print(('Average 24h: {:' + max_len + '.2f}').format(average))
+print(('Average  3h: {:' + max_len + '.2f}').format(average_last))
+
+if(report_max < 100):
+	print("Everything looks fine")
+elif(average_last > average or average_last > 100):
+	print("Servce is experiencing difficulties at the moment")
+elif(average > average_last):
+	print("Service experienced difficulties in the past 24 hours")
