@@ -3,4 +3,4 @@ isdown
 
 Python 3
 
-isdown <name of an online service>
+isdown &lt;name of an online service&gt;
