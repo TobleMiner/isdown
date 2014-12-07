@@ -55,6 +55,6 @@ print(('Average  3h: {:' + max_len + '.2f}').format(average_last))
 if(report_max < 100):
 	print("Everything looks fine")
 elif(average_last > average or average_last > 100):
-	print("Servce is experiencing difficulties at the moment")
+	print("Service is experiencing difficulties at the moment")
 elif(average > average_last):
 	print("Service experienced difficulties in the past 24 hours")
